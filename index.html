@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pain Discovery — Field Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#08080a; --bg2:#0c0d0f; --panel:#111214; --panel2:#15161a;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.15);
+    --ink:#ECECEE; --muted:#8A8C92; --faint:#5C5E66;
+    --crimson:#C8102E; --crimson2:#E62740; --gold:#C9A86A;
+    --sans:'Inter',-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+    --disp:'Space Grotesk','Inter',Helvetica,Arial,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,'Cascadia Code',Consolas,monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(200,16,46,.06), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(201,168,106,.05), transparent 55%),
+      var(--bg);
+    color:var(--ink); font-family:var(--sans);
+    -webkit-font-smoothing:antialiased; line-height:1.55;
+    letter-spacing:.01em;
+  }
+  ::selection{background:var(--crimson); color:#fff;}
+
+  /* ---------- Top classification stripe ---------- */
+  .stripe{
+    position:sticky; top:0; z-index:40;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:16px; padding:9px 22px;
+    background:rgba(8,8,10,.82); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+    font-family:var(--mono); font-size:11px; letter-spacing:.28em;
+    text-transform:uppercase; color:var(--muted);
+  }
+  .stripe .tag{display:flex; align-items:center; gap:10px;}
+  .stripe .dot{width:6px; height:6px; background:var(--crimson); border-radius:50%; box-shadow:0 0 10px var(--crimson);}
+
+  /* ---------- Language switch ---------- */
+  .lang{
+    display:inline-flex; align-items:center; gap:9px;
+    padding:6px 12px 6px 8px; cursor:pointer;
+    background:var(--panel); border:1px solid var(--line2); border-radius:2px;
+    color:var(--ink); font-family:var(--mono); font-size:11px; letter-spacing:.2em;
+    transition:border-color .2s, background .2s; user-select:none;
+  }
+  .lang:hover{border-color:var(--crimson); background:var(--panel2);}
+  .lang svg{width:26px; height:16px; display:block; border:1px solid rgba(255,255,255,.18); border-radius:1px;}
+  .lang .swap{color:var(--faint); font-size:10px;}
+
+  /* ---------- Layout ---------- */
+  .wrap{max-width:920px; margin:0 auto; padding:46px 26px 120px;}
+  .hero{position:relative; padding:30px 0 26px; border-bottom:1px solid var(--line);}
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.36em; text-transform:uppercase; color:var(--crimson); margin:0 0 18px;}
+  h1{
+    font-family:var(--disp); font-weight:700; font-size:clamp(40px,8vw,76px);
+    line-height:.96; letter-spacing:-.02em; margin:0; text-transform:uppercase;
+  }
+  .subtitle{margin:16px 0 0; color:var(--muted); font-size:15px; max-width:46ch;}
+
+  /* ---------- Case file meta ---------- */
+  .casefile{
+    margin-top:30px; display:grid; grid-template-columns:repeat(2,1fr); gap:1px;
+    background:var(--line); border:1px solid var(--line);
+  }
+  .field{background:var(--bg2); padding:14px 16px;}
+  .field label{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.26em; text-transform:uppercase; color:var(--faint); margin-bottom:7px;}
+  .field input{
+    width:100%; background:transparent; border:0; color:var(--ink);
+    font-family:var(--sans); font-size:15px; font-weight:500; padding:0; outline:none;
+  }
+  .field input::placeholder{color:var(--faint); font-weight:400;}
+
+  /* ---------- Doctrine / loop ---------- */
+  section{margin-top:64px;}
+  .sec-head{display:flex; align-items:baseline; gap:16px; margin-bottom:22px;}
+  .sec-idx{font-family:var(--mono); font-size:12px; color:var(--crimson); letter-spacing:.2em; padding-top:4px;}
+  .sec-title{font-family:var(--disp); font-weight:600; font-size:22px; letter-spacing:.01em; margin:0; text-transform:uppercase;}
+  .sec-sub{color:var(--muted); font-size:14px; margin:3px 0 0;}
+
+  .loop{display:grid; gap:1px; background:var(--line); border:1px solid var(--line);}
+  .loop .row{display:flex; align-items:center; gap:18px; background:var(--bg2); padding:16px 20px;}
+  .loop .n{font-family:var(--mono); font-size:13px; color:var(--gold); width:24px; flex:none;}
+  .loop .t{font-family:var(--disp); font-weight:500; font-size:16px; letter-spacing:.04em; text-transform:uppercase;}
+
+  .map-note{
+    margin-top:22px; padding:18px 22px; border-left:2px solid var(--crimson);
+    background:var(--panel); color:var(--muted); font-size:14.5px; font-style:italic;
+  }
+
+  /* ---------- Phases ---------- */
+  .phase{margin-top:30px; border:1px solid var(--line); background:var(--panel); }
+  .phase-head{
+    display:flex; align-items:baseline; gap:18px; padding:20px 24px 18px;
+    border-bottom:1px solid var(--line); position:relative;
+  }
+  .phase-head::before{content:''; position:absolute; left:0; top:0; bottom:0; width:2px; background:var(--crimson);}
+  .phase-num{font-family:var(--mono); font-size:28px; font-weight:600; color:var(--faint); line-height:1; flex:none; letter-spacing:.02em;}
+  .phase-titles h3{margin:0; font-family:var(--disp); font-weight:600; font-size:20px; text-transform:uppercase; letter-spacing:.01em;}
+  .phase-titles p{margin:4px 0 0; color:var(--muted); font-size:13.5px;}
+  .phase-lead{padding:16px 24px 4px; color:var(--gold); font-size:13.5px; font-style:italic;}
+
+  .q{padding:22px 24px; border-top:1px solid var(--line);}
+  .q:first-of-type{border-top:0;}
+  .q .qline{display:flex; gap:14px; align-items:flex-start;}
+  .q .qmark{font-family:var(--mono); color:var(--crimson); font-size:14px; line-height:1.7; flex:none;}
+  .q .qtext{font-size:17px; font-weight:600; color:var(--ink); line-height:1.45;}
+  .q .note{margin:12px 0 0 28px; padding-left:14px; border-left:1px solid var(--line2); color:var(--muted); font-size:13.5px; line-height:1.5;}
+  .q .note .nb{color:var(--gold); font-family:var(--mono); font-size:10px; letter-spacing:.24em; text-transform:uppercase; display:block; margin-bottom:6px;}
+
+  .answer{margin:16px 0 0 28px;}
+  .answer .alabel{font-family:var(--mono); font-size:10px; letter-spacing:.26em; text-transform:uppercase; color:var(--faint); margin-bottom:8px; display:flex; align-items:center; gap:8px;}
+  .answer .alabel::before{content:''; width:14px; height:1px; background:var(--crimson);}
+  textarea{
+    width:100%; min-height:54px; resize:none; overflow:hidden;
+    background:var(--bg2); border:1px solid var(--line2); border-radius:2px;
+    color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.55;
+    padding:13px 15px; outline:none; transition:border-color .18s;
+  }
+  textarea:focus{border-color:var(--crimson);}
+  textarea::placeholder{color:var(--faint);}
+
+  /* ---------- Principles ---------- */
+  .principles{display:grid; gap:1px; background:var(--line); border:1px solid var(--line);}
+  .principle{background:var(--bg2); padding:22px 24px;}
+  .principle h4{margin:0 0 8px; font-family:var(--disp); font-weight:600; font-size:16px; text-transform:uppercase; letter-spacing:.02em; color:var(--ink);}
+  .principle h4 span{color:var(--crimson); font-family:var(--mono); font-size:12px; margin-right:10px;}
+  .principle p{margin:0; color:var(--muted); font-size:14px; line-height:1.55;}
+
+  .signal{
+    margin-top:30px; padding:26px 28px; border:1px solid var(--line2);
+    background:linear-gradient(180deg, rgba(200,16,46,.07), transparent);
+  }
+  .signal .st{font-family:var(--mono); font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--crimson); margin-bottom:12px;}
+  .signal p{margin:0; font-size:16px; line-height:1.6;}
+  .signal strong{color:var(--gold);}
+
+  /* ---------- Footer / actions ---------- */
+  .actions{
+    position:fixed; bottom:0; left:0; right:0; z-index:35;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:14px; background:rgba(8,8,10,.86); backdrop-filter:blur(12px);
+    border-top:1px solid var(--line);
+  }
+  button.btn{
+    display:inline-flex; align-items:center; gap:9px;
+    padding:11px 20px; cursor:pointer; font-family:var(--mono); font-size:11px;
+    letter-spacing:.2em; text-transform:uppercase; color:var(--ink);
+    background:var(--panel); border:1px solid var(--line2); border-radius:2px;
+    transition:border-color .18s, background .18s, color .18s;
+  }
+  button.btn:hover{border-color:var(--crimson); background:var(--panel2);}
+  button.btn.primary{background:var(--crimson); border-color:var(--crimson); color:#fff;}
+  button.btn.primary:hover{background:var(--crimson2); border-color:var(--crimson2);}
+  button.btn svg{width:14px; height:14px;}
+  .save-status{font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--faint); min-width:74px;}
+
+  .colophon{margin-top:70px; padding-top:22px; border-top:1px solid var(--line); display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; font-family:var(--mono); font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--faint);}
+
+  @media (max-width:620px){
+    .casefile{grid-template-columns:1fr;}
+    .actions{flex-wrap:wrap;}
+    .save-status{display:none;}
+  }
+
+  /* ===================== PRINT / PDF (dark dossier) ===================== */
+  @media print{
+    @page{ margin:14mm; }
+    html,body{
+      background:#08080a !important; color:#ECECEE !important;
+      -webkit-print-color-adjust:exact; print-color-adjust:exact;
+    }
+    .stripe, .actions, .lang, .colophon .noprint{display:none !important;}
+    .wrap{max-width:100%; padding:0;}
+    .hero{border-color:rgba(255,255,255,.25) !important;}
+    section{margin-top:30px; break-inside:avoid;}
+    .phase, .q, .principle, .signal, .loop .row, .field{break-inside:avoid;}
+    .phase{page-break-inside:auto;}
+    textarea{
+      background:#0c0d0f !important; border:1px solid rgba(255,255,255,.28) !important;
+      color:#ECECEE !important; overflow:visible !important;
+      -webkit-print-color-adjust:exact; print-color-adjust:exact;
+    }
+    .field, .loop .row, .principle{background:#0c0d0f !important;}
+    .map-note, .phase, .signal{background:#0d0e10 !important;}
+    input{color:#ECECEE !important;}
+    .print-only{display:block !important;}
+  }
+  .print-only{display:none;}
+</style>
+</head>
+<body>
+
+  <!-- Classification stripe -->
+  <div class="stripe">
+    <span class="tag"><span class="dot"></span><span id="t-classification">Confidential · Pain Intelligence</span></span>
+    <button class="lang" id="langBtn" title="Switch language">
+      <span id="flag"></span>
+      <span id="langCode">EN</span>
+      <span class="swap">⇄</span>
+    </button>
+  </div>
+
+  <div class="wrap">
+    <!-- HERO -->
+    <header class="hero">
+      <p class="kicker" id="t-kicker">Field Manual · Interview Dossier</p>
+      <h1 id="t-title">Pain Discovery</h1>
+      <p class="subtitle" id="t-subtitle"></p>
+
+      <div class="casefile">
+        <div class="field"><label id="l-subject">Subject</label><input id="m_subject" data-key="m_subject" autocomplete="off"></div>
+        <div class="field"><label id="l-agent">Interviewer</label><input id="m_agent" data-key="m_agent" autocomplete="off"></div>
+        <div class="field"><label id="l-operation">The activity</label><input id="m_operation" data-key="m_operation" autocomplete="off"></div>
+        <div class="field"><label id="l-date">Date</label><input id="m_date" data-key="m_date" autocomplete="off"></div>
+      </div>
+    </header>
+
+    <!-- DOCTRINE -->
+    <section>
+      <div class="sec-head">
+        <span class="sec-idx">00</span>
+        <div><h2 class="sec-title" id="t-loop-title">Operating Doctrine</h2></div>
+      </div>
+      <div class="loop" id="loop"></div>
+      <div class="map-note" id="t-mapnote"></div>
+    </section>
+
+    <!-- PHASES -->
+    <section>
+      <div class="sec-head">
+        <span class="sec-idx" id="t-phases-idx">PH</span>
+        <div><h2 class="sec-title" id="t-phases-title">The Five Phases</h2>
+        <p class="sec-sub" id="t-phases-sub"></p></div>
+      </div>
+      <div id="phases"></div>
+    </section>
+
+    <!-- PRINCIPLES -->
+    <section>
+      <div class="sec-head">
+        <span class="sec-idx">★</span>
+        <div><h2 class="sec-title" id="t-principles-title">Make or break</h2></div>
+      </div>
+      <div class="principles" id="principles"></div>
+      <div class="signal">
+        <div class="st" id="t-signal-title">The single best signal</div>
+        <p id="t-signal"></p>
+      </div>
+    </section>
+
+    <div class="colophon">
+      <span id="t-colo-left">Pain Discovery · Field Manual</span>
+      <span class="noprint" id="t-colo-right">Answers auto-saved to this browser</span>
+    </div>
+  </div>
+
+  <!-- ACTION BAR -->
+  <div class="actions">
+    <span class="save-status" id="saveStatus"></span>
+    <button class="btn primary" id="btnExport">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+      <span id="t-export">Export PDF</span>
+    </button>
+    <button class="btn" id="btnSave"><span id="t-save">Save file</span></button>
+    <button class="btn" id="btnLoad"><span id="t-load">Load</span></button>
+    <button class="btn" id="btnClear"><span id="t-clear">Clear</span></button>
+    <input type="file" id="fileInput" accept="application/json" style="display:none">
+  </div>
+
+<script>
+/* ====================== FLAG SVGs ====================== */
+const FLAGS = {
+  gb: `<svg viewBox="0 0 60 30"><clipPath id="gbc"><rect width="60" height="30"/></clipPath><g clip-path="url(#gbc)"><rect width="60" height="30" fill="#012169"/><path d="M0,0 60,30 M60,0 0,30" stroke="#fff" stroke-width="6"/><clipPath id="gbt"><path d="M30,15 V0 H60 V15 z M30,15 H60 V30 z M30,15 V30 H0 V15 z M30,15 H0 V0 z"/></clipPath><path d="M0,0 60,30 M60,0 0,30" clip-path="url(#gbt)" stroke="#C8102E" stroke-width="4"/><path d="M30,0 V30 M0,15 H60" stroke="#fff" stroke-width="10"/><path d="M30,0 V30 M0,15 H60" stroke="#C8102E" stroke-width="6"/></g></svg>`,
+  ru: `<svg viewBox="0 0 60 30"><rect width="60" height="10" y="0" fill="#fff"/><rect width="60" height="10" y="10" fill="#0039A6"/><rect width="60" height="10" y="20" fill="#D52B1E"/></svg>`
+};
+
+/* ====================== CONTENT (EN / RU) ====================== */
+const I18N = {
+  en: {
+    code:'EN', flag:'ru', next:'RU',
+    htmlLang:'en',
+    docTitle:'Pain Discovery — Field Manual',
+    classification:'Confidential · Pain Intelligence',
+    kicker:'Field Manual · Interview Dossier',
+    title:'Pain Discovery',
+    subtitle:'A fill-in dossier for customer-pain interviews. Follow the heat, record the evidence, export the file.',
+    labels:{subject:'Subject', agent:'Interviewer', operation:'The activity', date:'Date'},
+    placeholders:{subject:'Who you’re interviewing', agent:'Your name', operation:'e.g. closing the monthly books', date:''},
+    loopTitle:'Operating Doctrine',
+    loop:['Discover their pain','Ask them questions','Sell them on the desired state','Tell them the price and shut up','Go back to step 2'],
+    mapNote:'The structure moves through five phases. Don’t read it as a questionnaire to fire off in order; it’s a map. You follow the heat wherever it shows up.',
+    phasesIdx:'PH', phasesTitle:'The Five Phases',
+    phasesSub:'Record their answers verbatim where you can. The exact words are the evidence.',
+    answerLabel:'Record',
+    noteLabel:'Why you ask',
+    phases:[
+      {num:'01', title:'Open the door', sub:'get them narrating, not theorizing', lead:'',
+        items:[
+          {id:'p1q1', q:'Walk me through how you usually do [the thing].', note:'You want a story, not a summary. If they say “well, it depends” and stay vague, they don’t do it often enough to hurt. If they launch into a detailed play-by-play, you’ve found someone who lives this daily.'},
+          {id:'p1q2', q:'When was the last time you had to deal with that?', note:'Anchors them to a real, datable event instead of an average. “Average” answers are fiction; specific memories are fact.'}
+        ]},
+      {num:'02', title:'Replay one real instance', sub:'the gold is here', lead:'Pick the most recent time they mentioned and zoom in.',
+        items:[
+          {id:'p2q1', q:'Take me back to that day — what happened, step by step?', note:'You’re hunting for the moment their voice changes. Friction lives in the seams between steps.'},
+          {id:'p2q2', q:'Where did it go wrong / get annoying?', note:'Let them point at the pain themselves. Don’t suggest it.'},
+          {id:'p2q3', q:'What did you do then?', note:'This reveals the workaround — the most valuable thing in the whole conversation. A workaround is a problem someone is already paying for in effort.'}
+        ]},
+      {num:'03', title:'Quantify it', sub:'turn the feeling into numbers', lead:'',
+        items:[
+          {id:'p3q1', q:'How long did that take you?', note:''},
+          {id:'p3q2', q:'How often does this happen — daily, weekly, once a quarter?', note:''},
+          {id:'p3q3', q:'What did it cost you when it went wrong — time, money, a missed deadline, a pissed-off boss?', note:'Frequent × painful × costly is the formula. A rare annoyance and a daily wound look identical in conversation until you ask these three. A real problem survives all three questions; a fake one collapses on at least one.'}
+        ]},
+      {num:'04', title:'Find out if they actually care', sub:'without ever asking “would you pay”', lead:'Amateurs ruin everything by asking “would you buy a tool that fixes this?” — which invites a polite lie. Ask about the past instead.',
+        items:[
+          {id:'p4q1', q:'Have you tried to fix this before?', note:'If yes → real pain. If “no, never bothered” → it doesn’t hurt enough, walk away no matter how much they complain.'},
+          {id:'p4q2', q:'What did you try? Why didn’t it stick?', note:'Tells you the graveyard of failed solutions, so you don’t build tombstone #6.'},
+          {id:'p4q3', q:'Have you ever paid for anything to deal with this?', note:'Money already flowing is the strongest validation that exists. You’re redirecting a budget, not inventing one.'}
+        ]},
+      {num:'05', title:'Pressure-test the heat', sub:'', lead:'',
+        items:[
+          {id:'p5q1', q:'On a scale where 10 means you’d drop everything to fix this today — where is it?', note:'Anything under a 7 is a “nice to have,” and nice-to-haves don’t get paid for.'},
+          {id:'p5q2', q:'Who else owns this problem with you?', note:'Reveals whether it’s one person’s quirk or a widespread, sellable pain.'},
+          {id:'p5q3', q:'If this magically vanished tomorrow, what would change for you?', note:'If the answer is small or vague, the problem is small. If they light up, you’ve found something real.'}
+        ]}
+    ],
+    principlesTitle:'Make or break',
+    principles:[
+      {h:'Past tense always', b:'“What do you do” / “what did you try” / “how long did it take” — never “would you” or “do you think you’d.” The future tense is where flattery lives.'},
+      {h:'Shut up and let silence work', b:'After they answer, count to three before you speak. People fill silence with the real story — the thing they were about to skip over.'},
+      {h:'Disconfirm, don’t confirm', b:'Go in trying to kill your assumption that the problem exists. If it survives a genuine attempt to disprove it, it’s real. If you’re hunting for a “yes,” you’ll always find one, and it’ll be worthless.'}
+    ],
+    signalTitle:'The single best signal',
+    signal:'Across all of it, the strongest tell is <strong>an existing workaround</strong>. When someone has already cobbled together a hack to cope, you’ve found a problem painful enough that they’re paying for it right now — they just haven’t found a better invoice to pay.',
+    coloLeft:'Pain Discovery · Field Manual',
+    coloRight:'Answers auto-saved to this browser',
+    btn:{export:'Export PDF', save:'Save file', load:'Load', clear:'Clear'},
+    saved:'Saved', saving:'Saving…',
+    clearConfirm:'Clear all answers and the case file? This cannot be undone.',
+    exportHint:'In the print dialog, choose “Save as PDF.”'
+  },
+
+  ru: {
+    code:'RU', flag:'gb', next:'EN',
+    htmlLang:'ru',
+    docTitle:'Выявление боли — Полевое руководство',
+    classification:'Конфиденциально · Разведка боли',
+    kicker:'Полевое руководство · Досье интервью',
+    title:'Выявление боли',
+    subtitle:'Досье-анкета для интервью о боли клиента. Иди на жар, фиксируй доказательства, экспортируй файл.',
+    labels:{subject:'Объект', agent:'Интервьюер', operation:'Деятельность', date:'Дата'},
+    placeholders:{subject:'Кого вы интервьюируете', agent:'Ваше имя', operation:'напр. закрытие месячной отчётности', date:''},
+    loopTitle:'Рабочая доктрина',
+    loop:['Выяви их боль','Задавай им вопросы','Продай им желаемое состояние','Назови цену и замолчи','Вернись к шагу 2'],
+    mapNote:'Структура проходит через пять фаз. Не читай её как анкету, которую нужно отбарабанить по порядку, — это карта. Иди туда, где чувствуется жар.',
+    phasesIdx:'ФЗ', phasesTitle:'Пять фаз',
+    phasesSub:'Записывай ответы дословно, где можешь. Точные слова — это и есть доказательства.',
+    answerLabel:'Запись',
+    noteLabel:'Зачем спрашиваешь',
+    phases:[
+      {num:'01', title:'Открой дверь', sub:'заставь их рассказывать, а не теоретизировать', lead:'',
+        items:[
+          {id:'p1q1', q:'Расскажите, как вы обычно делаете [это].', note:'Тебе нужна история, а не резюме. Если говорят «ну, зависит от ситуации» и остаются расплывчатыми — значит, делают это недостаточно часто, чтобы было больно. Если пускаются в подробный пошаговый рассказ — ты нашёл того, кто живёт этим каждый день.'},
+          {id:'p1q2', q:'Когда вы в последний раз с этим сталкивались?', note:'Привязывает к реальному, датируемому событию, а не к усреднению. «Средние» ответы — выдумка; конкретные воспоминания — факт.'}
+        ]},
+      {num:'02', title:'Переиграй один реальный случай', sub:'золото здесь', lead:'Возьми самый недавний упомянутый случай и приблизься.',
+        items:[
+          {id:'p2q1', q:'Вернёмся к тому дню — что произошло, шаг за шагом?', note:'Ты охотишься за моментом, когда меняется их голос. Трение живёт в стыках между шагами.'},
+          {id:'p2q2', q:'Где всё пошло не так / стало раздражать?', note:'Пусть сами укажут на боль. Не подсказывай.'},
+          {id:'p2q3', q:'И что вы тогда сделали?', note:'Это раскрывает обходной путь — самое ценное во всём разговоре. Обходной путь — это проблема, за которую человек уже платит усилиями.'}
+        ]},
+      {num:'03', title:'Оцифруй это', sub:'преврати чувство в числа', lead:'',
+        items:[
+          {id:'p3q1', q:'Сколько времени это у вас заняло?', note:''},
+          {id:'p3q2', q:'Как часто это происходит — ежедневно, еженедельно, раз в квартал?', note:''},
+          {id:'p3q3', q:'Во что это вам обошлось, когда пошло не так — время, деньги, сорванный срок, разозлённый начальник?', note:'Часто × больно × дорого — вот формула. Редкая досада и ежедневная рана выглядят в разговоре одинаково, пока не задашь эти три вопроса. Настоящая проблема переживает все три; фальшивая рассыпается хотя бы на одном.'}
+        ]},
+      {num:'04', title:'Выясни, есть ли им вообще дело', sub:'ни разу не спросив «купили бы вы»', lead:'Любители всё портят, спрашивая «купили бы вы инструмент, который это решает?» — что напрашивается на вежливую ложь. Вместо этого спрашивай о прошлом.',
+        items:[
+          {id:'p4q1', q:'Вы пытались это исправить раньше?', note:'Если да → боль настоящая. Если «нет, не заморачивался» → значит, не настолько больно; уходи, как бы они ни жаловались.'},
+          {id:'p4q2', q:'Что вы пробовали? Почему не прижилось?', note:'Показывает кладбище провалившихся решений, чтобы ты не построил надгробие №6.'},
+          {id:'p4q3', q:'Вы когда-нибудь платили за что-то, чтобы с этим справиться?', note:'Уже текущие деньги — самое сильное подтверждение из существующих. Ты перенаправляешь бюджет, а не выдумываешь его.'}
+        ]},
+      {num:'05', title:'Проверь жар под давлением', sub:'', lead:'',
+        items:[
+          {id:'p5q1', q:'По шкале, где 10 значит «бросил бы всё и решил это сегодня» — где это у вас?', note:'Всё, что ниже 7, — это «было бы неплохо», а за «было бы неплохо» не платят.'},
+          {id:'p5q2', q:'Кто ещё владеет этой проблемой вместе с вами?', note:'Показывает, причуда ли это одного человека или массовая, продаваемая боль.'},
+          {id:'p5q3', q:'Если бы это волшебно исчезло завтра — что бы для вас изменилось?', note:'Если ответ мелкий или расплывчатый — проблема мелкая. Если они загораются — ты нашёл что-то настоящее.'}
+        ]}
+    ],
+    principlesTitle:'Что решает всё',
+    principles:[
+      {h:'Всегда прошедшее время', b:'«Что вы делаете» / «что вы пробовали» / «сколько это заняло» — никогда «вы бы» или «как думаете, стали бы вы». Будущее время — там, где живёт лесть.'},
+      {h:'Замолчи и дай тишине работать', b:'После их ответа сосчитай до трёх, прежде чем заговорить. Люди заполняют тишину настоящей историей — той, которую собирались пропустить.'},
+      {h:'Опровергай, а не подтверждай', b:'Иди с намерением убить своё предположение, что проблема существует. Если оно переживёт честную попытку его опровергнуть — оно настоящее. Если ты охотишься за «да» — ты всегда его найдёшь, и оно будет бесполезным.'}
+    ],
+    signalTitle:'Лучший единственный сигнал',
+    signal:'Из всего этого самый сильный признак — <strong>уже существующий обходной путь</strong>. Когда человек уже сколотил костыль, чтобы справляться, — ты нашёл проблему, достаточно болезненную, чтобы за неё платили прямо сейчас; просто пока не нашли счёт получше.',
+    coloLeft:'Выявление боли · Полевое руководство',
+    coloRight:'Ответы автоматически сохраняются в этом браузере',
+    btn:{export:'Экспорт PDF', save:'Сохранить файл', load:'Загрузить', clear:'Очистить'},
+    saved:'Сохранено', saving:'Сохранение…',
+    clearConfirm:'Очистить все ответы и досье? Это нельзя отменить.',
+    exportHint:'В окне печати выберите «Сохранить как PDF».'
+  }
+};
+
+/* ====================== STATE ====================== */
+const STORE_KEY = 'painDiscovery.answers.v1';
+const LANG_KEY  = 'painDiscovery.lang.v1';
+let lang = localStorage.getItem(LANG_KEY) || 'en';
+let answers = loadAnswers();
+
+function loadAnswers(){
+  try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }catch(e){ return {}; }
+}
+function persist(){
+  localStorage.setItem(STORE_KEY, JSON.stringify(answers));
+  flashSaved();
+}
+let saveTimer=null;
+function flashSaved(){
+  const el=document.getElementById('saveStatus'); const t=I18N[lang];
+  el.textContent=t.saving; clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{ el.textContent='● '+t.saved; },350);
+}
+
+/* ====================== RENDER ====================== */
+function autosize(ta){ ta.style.height='auto'; ta.style.height=(ta.scrollHeight)+'px'; }
+
+function render(){
+  const t = I18N[lang];
+  document.documentElement.lang = t.htmlLang;
+  document.title = t.docTitle;
+
+  // flag button shows the language you'll switch TO
+  document.getElementById('flag').innerHTML = FLAGS[t.flag];
+  document.getElementById('langCode').textContent = t.next;
+
+  // static text
+  const set=(id,txt)=>{const e=document.getElementById(id); if(e) e.textContent=txt;};
+  set('t-classification',t.classification);
+  set('t-kicker',t.kicker);
+  set('t-title',t.title);
+  set('t-subtitle',t.subtitle);
+  set('l-subject',t.labels.subject);
+  set('l-agent',t.labels.agent);
+  set('l-operation',t.labels.operation);
+  set('l-date',t.labels.date);
+  set('t-loop-title',t.loopTitle);
+  set('t-mapnote',t.mapNote);
+  set('t-phases-idx',t.phasesIdx);
+  set('t-phases-title',t.phasesTitle);
+  set('t-phases-sub',t.phasesSub);
+  set('t-principles-title',t.principlesTitle);
+  set('t-signal-title',t.signalTitle);
+  document.getElementById('t-signal').innerHTML = t.signal;
+  set('t-colo-left',t.coloLeft);
+  set('t-colo-right',t.coloRight);
+  set('t-export',t.btn.export);
+  set('t-save',t.btn.save);
+  set('t-load',t.btn.load);
+  set('t-clear',t.btn.clear);
+  flashSaved();
+
+  // meta fields
+  ['m_subject','m_agent','m_operation','m_date'].forEach(k=>{
+    const inp=document.getElementById(k);
+    inp.value = answers[k] || '';
+    inp.placeholder = t.placeholders[k.replace('m_','')] || '';
+  });
+
+  // loop
+  document.getElementById('loop').innerHTML = t.loop.map((txt,i)=>
+    `<div class="row"><span class="n">0${i+1}</span><span class="t">${txt}</span></div>`).join('');
+
+  // phases
+  document.getElementById('phases').innerHTML = t.phases.map(ph=>{
+    const lead = ph.lead ? `<div class="phase-lead">${ph.lead}</div>` : '';
+    const items = ph.items.map(it=>{
+      const note = it.note ? `<div class="note"><span class="nb">${t.noteLabel}</span>${it.note}</div>` : '';
+      const val = (answers[it.id]||'').replace(/"/g,'&quot;');
+      return `<div class="q">
+        <div class="qline"><span class="qmark">▸</span><span class="qtext">${it.q}</span></div>
+        ${note}
+        <div class="answer">
+          <div class="alabel">${t.answerLabel}</div>
+          <textarea data-key="${it.id}" placeholder="…">${answers[it.id]||''}</textarea>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="phase">
+      <div class="phase-head">
+        <span class="phase-num">${ph.num}</span>
+        <div class="phase-titles"><h3>${ph.title}</h3>${ph.sub?`<p>${ph.sub}</p>`:''}</div>
+      </div>
+      ${lead}
+      ${items}
+    </div>`;
+  }).join('');
+
+  // principles
+  document.getElementById('principles').innerHTML = t.principles.map((p,i)=>
+    `<div class="principle"><h4><span>0${i+1}</span>${p.h}</h4><p>${p.b}</p></div>`).join('');
+
+  // bind inputs
+  document.querySelectorAll('textarea[data-key]').forEach(ta=>{
+    autosize(ta);
+    ta.addEventListener('input',()=>{ answers[ta.dataset.key]=ta.value; autosize(ta); persist(); });
+  });
+  document.querySelectorAll('input[data-key]').forEach(inp=>{
+    inp.addEventListener('input',()=>{ answers[inp.dataset.key]=inp.value; persist(); });
+  });
+}
+
+/* ====================== ACTIONS ====================== */
+document.getElementById('langBtn').addEventListener('click',()=>{
+  lang = (lang==='en') ? 'ru' : 'en';
+  localStorage.setItem(LANG_KEY, lang);
+  render();
+});
+
+document.getElementById('btnExport').addEventListener('click',()=>{ window.print(); });
+
+document.getElementById('btnSave').addEventListener('click',()=>{
+  const payload = { _meta:{ app:'pain-discovery', version:1, exported:new Date().toISOString() }, answers };
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const a=document.createElement('a');
+  const name = (answers.m_subject||'pain-discovery').toString().trim().replace(/[^\w\-]+/g,'_').slice(0,40) || 'pain-discovery';
+  a.href=URL.createObjectURL(blob); a.download=`${name}.json`; a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById('btnLoad').addEventListener('click',()=>document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change',(e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{
+    const d=JSON.parse(r.result);
+    answers = d.answers || d || {};
+    persist(); render();
+  }catch(err){ alert('Invalid file.'); } };
+  r.readAsText(f); e.target.value='';
+});
+
+document.getElementById('btnClear').addEventListener('click',()=>{
+  if(confirm(I18N[lang].clearConfirm)){ answers={}; persist(); render(); }
+});
+
+/* ====================== INIT ====================== */
+render();
+</script>
+</body>
+</html>

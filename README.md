@@ -9,8 +9,7 @@ Built as one self-contained `index.html` — no build step, no dependencies, wor
 - **Fill-in template** for all five interview phases, the operating doctrine, and the make-or-break principles.
 - **Language switch** (flag button, top-right) — English ⇄ Russian. Your typed answers stay put when you switch languages.
 - **Auto-save** — answers persist in your browser (`localStorage`); nothing is sent anywhere.
-- **Export PDF** — keeps the dark espionage theme. In the print dialog, choose **Save as PDF**.
-- **Share PDF** — builds a dark-dossier PDF and opens the native share sheet (Web Share API); on browsers without file-sharing it downloads the PDF instead. Uses a bundled, offline copy of [html2pdf.js](vendor/html2pdf.bundle.min.js).
+- **Save image / Share** — renders the filled dossier to a single dark **PNG** that preserves the exact appearance. *Share* opens the native share sheet (Web Share API) so you can send it through any messenger where it previews inline; *Save image* downloads it. Uses a bundled, offline copy of [html2canvas](vendor/html2canvas.min.js). Answers render as static blocks so nothing is clipped.
 - **Design** — minimalist-luxury / espionage aesthetic: deep blacks, charcoal panels, crimson + gold accents, Swiss-inspired typography.
 
 ## Use it locally

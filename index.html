@@ -277,18 +277,18 @@
   <!-- ACTION BAR -->
   <div class="actions">
     <span class="save-status" id="saveStatus"></span>
-    <button class="btn primary" id="btnExport">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
-      <span id="t-export">Export PDF</span>
-    </button>
-    <button class="btn" id="btnShare">
+    <button class="btn primary" id="btnShare">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
-      <span id="t-share">Share PDF</span>
+      <span id="t-share">Share</span>
+    </button>
+    <button class="btn" id="btnSave">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      <span id="t-save">Save image</span>
     </button>
     <button class="btn" id="btnClear"><span id="t-clear">Clear</span></button>
   </div>
 
-<script src="vendor/html2pdf.bundle.min.js"></script>
+<script src="vendor/html2canvas.min.js"></script>
 <script>
 /* ====================== FLAG SVGs ====================== */
 const FLAGS = {
@@ -356,14 +356,13 @@ const I18N = {
     signal:'Across all of it, the strongest tell is <strong>an existing workaround</strong>. When someone has already cobbled together a hack to cope, you’ve found a problem painful enough that they’re paying for it right now — they just haven’t found a better invoice to pay.',
     coloLeft:'Pain Discovery · Field Manual',
     coloRight:'Answers auto-saved to this browser',
-    btn:{export:'Export PDF', share:'Share PDF', clear:'Clear'},
+    btn:{save:'Save image', share:'Share', clear:'Clear'},
     saved:'Saved', saving:'Saving…',
     clearConfirm:'Clear all answers and the case file? This cannot be undone.',
-    exportHint:'In the print dialog, choose “Save as PDF.”',
-    sharePrep:'Building PDF…', shareTitle:'Pain Discovery — Interview Dossier',
+    sharePrep:'Building image…', shareTitle:'Pain Discovery — Interview Dossier',
     shareText:'Pain discovery interview dossier.',
-    shareFallback:'Sharing files isn’t supported in this browser — the PDF was downloaded instead.',
-    shareError:'Could not build the PDF. Try “Export PDF” instead.'
+    shareFallback:'Sharing isn’t supported in this browser — the image was downloaded instead.',
+    shareError:'Could not build the image.'
   },
 
   ru: {
@@ -424,14 +423,13 @@ const I18N = {
     signal:'Из всего этого самый сильный признак — <strong>уже существующий обходной путь</strong>. Когда человек уже сколотил костыль, чтобы справляться, — ты нашёл проблему, достаточно болезненную, чтобы за неё платили прямо сейчас; просто пока не нашли счёт получше.',
     coloLeft:'Выявление боли · Полевое руководство',
     coloRight:'Ответы автоматически сохраняются в этом браузере',
-    btn:{export:'Экспорт PDF', share:'Поделиться PDF', clear:'Очистить'},
+    btn:{save:'Сохранить изображение', share:'Поделиться', clear:'Очистить'},
     saved:'Сохранено', saving:'Сохранение…',
     clearConfirm:'Очистить все ответы и досье? Это нельзя отменить.',
-    exportHint:'В окне печати выберите «Сохранить как PDF».',
-    sharePrep:'Создание PDF…', shareTitle:'Выявление боли — Досье интервью',
+    sharePrep:'Создание изображения…', shareTitle:'Выявление боли — Досье интервью',
     shareText:'Досье интервью по выявлению боли.',
-    shareFallback:'Общий доступ к файлам не поддерживается в этом браузере — PDF был скачан.',
-    shareError:'Не удалось создать PDF. Попробуйте «Экспорт PDF».'
+    shareFallback:'Общий доступ к файлам не поддерживается — изображение скачано.',
+    shareError:'Не удалось создать изображение.'
   }
 };
 
@@ -487,8 +485,8 @@ function render(){
   document.getElementById('t-signal').innerHTML = t.signal;
   set('t-colo-left',t.coloLeft);
   set('t-colo-right',t.coloRight);
-  set('t-export',t.btn.export);
   set('t-share',t.btn.share);
+  set('t-save',t.btn.save);
   set('t-clear',t.btn.clear);
   flashSaved();
 
@@ -568,44 +566,56 @@ function syncMirrors(){
 }
 window.addEventListener('beforeprint', syncMirrors);
 
-document.getElementById('btnExport').addEventListener('click',()=>{ syncMirrors(); window.print(); });
-
-document.getElementById('btnShare').addEventListener('click', async ()=>{
-  const t=I18N[lang];
-  if(typeof html2pdf==='undefined'){ alert(t.shareError); return; }
-  const btn=document.getElementById('btnShare');
-  const label=document.getElementById('t-share'); const orig=label.textContent;
-  label.textContent=t.sharePrep; btn.disabled=true;
+// Render the dossier to a single dark PNG — preserves the exact appearance,
+// previews inline in any messenger, no page frame / white margins.
+async function buildImageBlob(){
   syncMirrors();
   document.body.classList.add('exporting');
+  const el = document.querySelector('.wrap');
   try{
-    const blob = await html2pdf().set({
-      margin:[10,10,12,10],
-      filename:`${fileBase()}.pdf`,
-      image:{type:'jpeg', quality:0.96},
-      html2canvas:{scale:2, backgroundColor:'#08080a', useCORS:true, windowWidth:920},
-      jsPDF:{unit:'mm', format:'a4', orientation:'portrait'},
-      pagebreak:{mode:['css','legacy'], avoid:['.q','.phase-head','.principle','.loop .row','.field','.signal']}
-    }).from(document.querySelector('.wrap')).outputPdf('blob');
-
+    const canvas = await html2canvas(el, {
+      backgroundColor:'#08080a', scale:2, useCORS:true,
+      width: el.offsetWidth, windowWidth:960,
+      scrollX:0, scrollY:0
+    });
+    return await new Promise(res=>canvas.toBlob(res,'image/png'));
+  } finally {
     document.body.classList.remove('exporting');
-    const file = new File([blob], `${fileBase()}.pdf`, {type:'application/pdf'});
+  }
+}
 
-    if(navigator.canShare && navigator.canShare({files:[file]})){
+function downloadBlob(blob, name){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1500);
+}
+
+async function exportImage(doShare){
+  const t=I18N[lang];
+  if(typeof html2canvas==='undefined'){ alert(t.shareError); return; }
+  const btn   = document.getElementById(doShare?'btnShare':'btnSave');
+  const label = document.getElementById(doShare?'t-share':'t-save');
+  const orig  = label.textContent;
+  label.textContent=t.sharePrep; btn.disabled=true;
+  window.scrollTo(0,0);
+  try{
+    const blob = await buildImageBlob();
+    const file = new File([blob], fileBase()+'.png', {type:'image/png'});
+    if(doShare && navigator.canShare && navigator.canShare({files:[file]})){
       await navigator.share({files:[file], title:t.shareTitle, text:t.shareText});
     }else{
-      const a=document.createElement('a');
-      a.href=URL.createObjectURL(blob); a.download=file.name; a.click();
-      URL.revokeObjectURL(a.href);
-      alert(t.shareFallback);
+      downloadBlob(blob, file.name);
+      if(doShare) alert(t.shareFallback);
     }
   }catch(err){
-    document.body.classList.remove('exporting');
     if(err && err.name!=='AbortError') alert(t.shareError);
   }finally{
     label.textContent=orig; btn.disabled=false;
   }
-});
+}
+
+document.getElementById('btnShare').addEventListener('click',()=>exportImage(true));
+document.getElementById('btnSave').addEventListener('click',()=>exportImage(false));
 
 document.getElementById('btnClear').addEventListener('click',()=>{
   if(confirm(I18N[lang].clearConfirm)){ answers={}; persist(); render(); }

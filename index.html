@@ -576,10 +576,16 @@ async function buildPdfBlob(){
   syncMirrors();
   document.body.classList.add('exporting');
   const el = document.querySelector('.wrap');
+  // Force a fixed desktop capture width so phones (narrow viewport) render the
+  // SAME full-width layout instead of capturing only a left slice of the page.
+  const CW = 920;
+  const prevW = el.style.width, prevMax = el.style.maxWidth;
+  el.style.width = CW + 'px';
+  el.style.maxWidth = 'none';
   try{
     const canvas = await html2canvas(el, {
       backgroundColor:'#08080a', scale:2, useCORS:true,
-      width: el.offsetWidth, windowWidth:960, scrollX:0, scrollY:0
+      width: CW, windowWidth: CW, scrollX:0, scrollY:0
     });
     const { jsPDF } = window.jspdf;
 
@@ -594,6 +600,8 @@ async function buildPdfBlob(){
     pdf.addImage(img, 'JPEG', 0, 0, pw, ph, 'page', 'FAST');
     return pdf.output('blob');
   } finally {
+    el.style.width = prevW;
+    el.style.maxWidth = prevMax;
     document.body.classList.remove('exporting');
   }
 }

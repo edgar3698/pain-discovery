@@ -569,8 +569,9 @@ window.addEventListener('beforeprint', syncMirrors);
 
 // Render the dossier to a single dark PNG — preserves the exact appearance,
 // previews inline in any messenger, no page frame / white margins.
-// Render the dossier to a dark, full-bleed, paginated PDF — opens full-screen
-// and readable in any messenger, no white page frame, appearance preserved.
+// Render the dossier to a dark PDF that is ONE single, content-tall page —
+// no page breaks (so nothing is cut mid-line), no white frame. On a phone it
+// fits to width and scrolls vertically. Appearance preserved exactly.
 async function buildPdfBlob(){
   syncMirrors();
   document.body.classList.add('exporting');
@@ -581,25 +582,16 @@ async function buildPdfBlob(){
       width: el.offsetWidth, windowWidth:960, scrollX:0, scrollY:0
     });
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation:'portrait', unit:'pt', format:'a4', compress:true });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const imgW  = pageW;                               // full bleed, no side margin
-    const imgH  = canvas.height * imgW / canvas.width;
-    const img   = canvas.toDataURL('image/jpeg', 0.95);
 
-    let position = 0, heightLeft = imgH;
-    const paint = () => { pdf.setFillColor(8,8,10); pdf.rect(0,0,pageW,pageH,'F'); };
-    paint();
-    pdf.addImage(img, 'JPEG', 0, position, imgW, imgH, 'page', 'FAST');
-    heightLeft -= pageH;
-    while(heightLeft > 0){
-      position -= pageH;
-      pdf.addPage();
-      paint();
-      pdf.addImage(img, 'JPEG', 0, position, imgW, imgH, 'page', 'FAST');
-      heightLeft -= pageH;
-    }
+    let pw = 595;                                   // A4 width in pt (familiar reading width)
+    let ph = canvas.height * pw / canvas.width;     // page is as tall as the whole dossier
+    const MAX_PT = 14000;                           // stay under PDF viewers' max page dimension
+    if(ph > MAX_PT){ const f = MAX_PT / ph; pw *= f; ph = MAX_PT; }
+
+    const pdf = new jsPDF({ orientation:'portrait', unit:'pt', format:[pw, ph], compress:true });
+    pdf.setFillColor(8,8,10); pdf.rect(0,0,pw,ph,'F');
+    const img = canvas.toDataURL('image/jpeg', 0.95);
+    pdf.addImage(img, 'JPEG', 0, 0, pw, ph, 'page', 'FAST');
     return pdf.output('blob');
   } finally {
     document.body.classList.remove('exporting');

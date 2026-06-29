@@ -10,7 +10,7 @@ Built as one self-contained `index.html` — no build step, no dependencies, wor
 - **Language switch** (flag button, top-right) — English ⇄ Russian. Your typed answers stay put when you switch languages.
 - **Auto-save** — answers persist in your browser (`localStorage`); nothing is sent anywhere.
 - **Export PDF** — keeps the dark espionage theme. In the print dialog, choose **Save as PDF**.
-- **Save / Load file** — export your answers as a `.json` you can back up or reopen later.
+- **Share PDF** — builds a dark-dossier PDF and opens the native share sheet (Web Share API); on browsers without file-sharing it downloads the PDF instead. Uses a bundled, offline copy of [html2pdf.js](vendor/html2pdf.bundle.min.js).
 - **Design** — minimalist-luxury / espionage aesthetic: deep blacks, charcoal panels, crimson + gold accents, Swiss-inspired typography.
 
 ## Use it locally

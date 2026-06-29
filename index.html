@@ -127,6 +127,13 @@
   textarea:focus{border-color:var(--crimson);}
   textarea::placeholder{color:var(--faint);}
 
+  /* Static answer mirror — used for PDF/print so nothing is clipped or scrollable */
+  .print-answer{
+    display:none; white-space:pre-wrap; word-break:break-word; min-height:54px;
+    background:var(--bg2); border:1px solid var(--line2); border-radius:2px;
+    color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.55; padding:13px 15px;
+  }
+
   /* ---------- Principles ---------- */
   .principles{display:grid; gap:1px; background:var(--line); border:1px solid var(--line);}
   .principle{background:var(--bg2); padding:22px 24px;}
@@ -183,9 +190,10 @@
     section{margin-top:30px; break-inside:avoid;}
     .phase, .q, .principle, .signal, .loop .row, .field{break-inside:avoid;}
     .phase{page-break-inside:auto;}
-    textarea{
-      background:#0c0d0f !important; border:1px solid rgba(255,255,255,.28) !important;
-      color:#ECECEE !important; overflow:visible !important;
+    textarea{display:none !important;}
+    .print-answer{
+      display:block !important; background:#0c0d0f !important;
+      border:1px solid rgba(255,255,255,.28) !important; color:#ECECEE !important;
       -webkit-print-color-adjust:exact; print-color-adjust:exact;
     }
     .field, .loop .row, .principle{background:#0c0d0f !important;}
@@ -194,6 +202,10 @@
     .print-only{display:block !important;}
   }
   .print-only{display:none;}
+
+  /* Same swap while rendering the shareable PDF off-screen */
+  body.exporting textarea{display:none !important;}
+  body.exporting .print-answer{display:block !important;}
 </style>
 </head>
 <body>
@@ -269,12 +281,14 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
       <span id="t-export">Export PDF</span>
     </button>
-    <button class="btn" id="btnSave"><span id="t-save">Save file</span></button>
-    <button class="btn" id="btnLoad"><span id="t-load">Load</span></button>
+    <button class="btn" id="btnShare">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+      <span id="t-share">Share PDF</span>
+    </button>
     <button class="btn" id="btnClear"><span id="t-clear">Clear</span></button>
-    <input type="file" id="fileInput" accept="application/json" style="display:none">
   </div>
 
+<script src="vendor/html2pdf.bundle.min.js"></script>
 <script>
 /* ====================== FLAG SVGs ====================== */
 const FLAGS = {
@@ -342,10 +356,14 @@ const I18N = {
     signal:'Across all of it, the strongest tell is <strong>an existing workaround</strong>. When someone has already cobbled together a hack to cope, you’ve found a problem painful enough that they’re paying for it right now — they just haven’t found a better invoice to pay.',
     coloLeft:'Pain Discovery · Field Manual',
     coloRight:'Answers auto-saved to this browser',
-    btn:{export:'Export PDF', save:'Save file', load:'Load', clear:'Clear'},
+    btn:{export:'Export PDF', share:'Share PDF', clear:'Clear'},
     saved:'Saved', saving:'Saving…',
     clearConfirm:'Clear all answers and the case file? This cannot be undone.',
-    exportHint:'In the print dialog, choose “Save as PDF.”'
+    exportHint:'In the print dialog, choose “Save as PDF.”',
+    sharePrep:'Building PDF…', shareTitle:'Pain Discovery — Interview Dossier',
+    shareText:'Pain discovery interview dossier.',
+    shareFallback:'Sharing files isn’t supported in this browser — the PDF was downloaded instead.',
+    shareError:'Could not build the PDF. Try “Export PDF” instead.'
   },
 
   ru: {
@@ -406,10 +424,14 @@ const I18N = {
     signal:'Из всего этого самый сильный признак — <strong>уже существующий обходной путь</strong>. Когда человек уже сколотил костыль, чтобы справляться, — ты нашёл проблему, достаточно болезненную, чтобы за неё платили прямо сейчас; просто пока не нашли счёт получше.',
     coloLeft:'Выявление боли · Полевое руководство',
     coloRight:'Ответы автоматически сохраняются в этом браузере',
-    btn:{export:'Экспорт PDF', save:'Сохранить файл', load:'Загрузить', clear:'Очистить'},
+    btn:{export:'Экспорт PDF', share:'Поделиться PDF', clear:'Очистить'},
     saved:'Сохранено', saving:'Сохранение…',
     clearConfirm:'Очистить все ответы и досье? Это нельзя отменить.',
-    exportHint:'В окне печати выберите «Сохранить как PDF».'
+    exportHint:'В окне печати выберите «Сохранить как PDF».',
+    sharePrep:'Создание PDF…', shareTitle:'Выявление боли — Досье интервью',
+    shareText:'Досье интервью по выявлению боли.',
+    shareFallback:'Общий доступ к файлам не поддерживается в этом браузере — PDF был скачан.',
+    shareError:'Не удалось создать PDF. Попробуйте «Экспорт PDF».'
   }
 };
 
@@ -466,8 +488,7 @@ function render(){
   set('t-colo-left',t.coloLeft);
   set('t-colo-right',t.coloRight);
   set('t-export',t.btn.export);
-  set('t-save',t.btn.save);
-  set('t-load',t.btn.load);
+  set('t-share',t.btn.share);
   set('t-clear',t.btn.clear);
   flashSaved();
 
@@ -494,6 +515,7 @@ function render(){
         <div class="answer">
           <div class="alabel">${t.answerLabel}</div>
           <textarea data-key="${it.id}" placeholder="…">${answers[it.id]||''}</textarea>
+          <div class="print-answer">${(answers[it.id]||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>
         </div>
       </div>`;
     }).join('');
@@ -514,7 +536,11 @@ function render(){
   // bind inputs
   document.querySelectorAll('textarea[data-key]').forEach(ta=>{
     autosize(ta);
-    ta.addEventListener('input',()=>{ answers[ta.dataset.key]=ta.value; autosize(ta); persist(); });
+    ta.addEventListener('input',()=>{
+      answers[ta.dataset.key]=ta.value; autosize(ta);
+      const m=ta.parentElement.querySelector('.print-answer'); if(m) m.textContent=ta.value;
+      persist();
+    });
   });
   document.querySelectorAll('input[data-key]').forEach(inp=>{
     inp.addEventListener('input',()=>{ answers[inp.dataset.key]=inp.value; persist(); });
@@ -528,27 +554,57 @@ document.getElementById('langBtn').addEventListener('click',()=>{
   render();
 });
 
-document.getElementById('btnExport').addEventListener('click',()=>{ window.print(); });
+function fileBase(){
+  return (answers.m_subject||'pain-discovery').toString().trim()
+    .replace(/[^\w\- ]+/g,'').replace(/\s+/g,'_').slice(0,40) || 'pain-discovery';
+}
 
-document.getElementById('btnSave').addEventListener('click',()=>{
-  const payload = { _meta:{ app:'pain-discovery', version:1, exported:new Date().toISOString() }, answers };
-  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
-  const a=document.createElement('a');
-  const name = (answers.m_subject||'pain-discovery').toString().trim().replace(/[^\w\-]+/g,'_').slice(0,40) || 'pain-discovery';
-  a.href=URL.createObjectURL(blob); a.download=`${name}.json`; a.click();
-  URL.revokeObjectURL(a.href);
-});
+// Copy each textarea's text into its static mirror so the PDF/print shows
+// the full answer with no scrollbar or clipping.
+function syncMirrors(){
+  document.querySelectorAll('textarea[data-key]').forEach(ta=>{
+    const m=ta.parentElement.querySelector('.print-answer'); if(m) m.textContent=ta.value;
+  });
+}
+window.addEventListener('beforeprint', syncMirrors);
 
-document.getElementById('btnLoad').addEventListener('click',()=>document.getElementById('fileInput').click());
-document.getElementById('fileInput').addEventListener('change',(e)=>{
-  const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=()=>{ try{
-    const d=JSON.parse(r.result);
-    answers = d.answers || d || {};
-    persist(); render();
-  }catch(err){ alert('Invalid file.'); } };
-  r.readAsText(f); e.target.value='';
+document.getElementById('btnExport').addEventListener('click',()=>{ syncMirrors(); window.print(); });
+
+document.getElementById('btnShare').addEventListener('click', async ()=>{
+  const t=I18N[lang];
+  if(typeof html2pdf==='undefined'){ alert(t.shareError); return; }
+  const btn=document.getElementById('btnShare');
+  const label=document.getElementById('t-share'); const orig=label.textContent;
+  label.textContent=t.sharePrep; btn.disabled=true;
+  syncMirrors();
+  document.body.classList.add('exporting');
+  try{
+    const blob = await html2pdf().set({
+      margin:[10,10,12,10],
+      filename:`${fileBase()}.pdf`,
+      image:{type:'jpeg', quality:0.96},
+      html2canvas:{scale:2, backgroundColor:'#08080a', useCORS:true, windowWidth:920},
+      jsPDF:{unit:'mm', format:'a4', orientation:'portrait'},
+      pagebreak:{mode:['css','legacy'], avoid:['.q','.phase-head','.principle','.loop .row','.field','.signal']}
+    }).from(document.querySelector('.wrap')).outputPdf('blob');
+
+    document.body.classList.remove('exporting');
+    const file = new File([blob], `${fileBase()}.pdf`, {type:'application/pdf'});
+
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:t.shareTitle, text:t.shareText});
+    }else{
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob); a.download=file.name; a.click();
+      URL.revokeObjectURL(a.href);
+      alert(t.shareFallback);
+    }
+  }catch(err){
+    document.body.classList.remove('exporting');
+    if(err && err.name!=='AbortError') alert(t.shareError);
+  }finally{
+    label.textContent=orig; btn.disabled=false;
+  }
 });
 
 document.getElementById('btnClear').addEventListener('click',()=>{

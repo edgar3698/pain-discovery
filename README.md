@@ -9,7 +9,7 @@ Built as one self-contained `index.html` — no build step, no dependencies, wor
 - **Fill-in template** for all five interview phases, the operating doctrine, and the make-or-break principles.
 - **Language switch** (flag button, top-right) — English ⇄ Russian. Your typed answers stay put when you switch languages.
 - **Auto-save** — answers persist in your browser (`localStorage`); nothing is sent anywhere.
-- **Save image / Share** — renders the filled dossier to a single dark **PNG** that preserves the exact appearance. *Share* opens the native share sheet (Web Share API) so you can send it through any messenger where it previews inline; *Save image* downloads it. Uses a bundled, offline copy of [html2canvas](vendor/html2canvas.min.js). Answers render as static blocks so nothing is clipped.
+- **Save PDF / Share** — renders the filled dossier to a dark, full-bleed, **A4-paginated PDF** that preserves the exact appearance and opens full-screen + readable in any messenger (no white page frame). *Share* opens the native share sheet (Web Share API); *Save PDF* downloads it. Built offline with bundled [html2canvas](vendor/html2canvas.min.js) + [jsPDF](vendor/jspdf.umd.min.js). Answers render as static blocks so nothing is clipped.
 - **Design** — minimalist-luxury / espionage aesthetic: deep blacks, charcoal panels, crimson + gold accents, Swiss-inspired typography.
 
 ## Use it locally
